@@ -1,6 +1,6 @@
 # LightRasterWindow
 Light multimedia library with pixel access screen space, spritesheet loading and rendering and wav audio files player. 
-Created with mind of prototyping small games projects.
+Created with mind of prototyping small (pixelart)games projects.
 
 </br></br>
 ############   What LRW can:   ############</br>
