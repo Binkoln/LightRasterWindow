@@ -1,6 +1,10 @@
 package lightrasterwindow.demos;
 
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
 
 import lightrasterwindow.Keyboard;
 import lightrasterwindow.Mouse;
@@ -42,7 +46,8 @@ public class Rendering_Sprites implements Runnable{
 	//Render method
 	public void run() {
 		if(screen == null)return;//Render after everything is properly initialized
-		screen.clear(screen.RGBToHexColor(0.5, 0.3, 0.2));
+		//screen.clear(screen.RGBToHexColor(0.5, 0.3, 0.2));
+		screen.clear(0x44ff0000);
 		
 		int x = Mouse.Xpixel;
 		int y = Mouse.Ypixel;
@@ -71,10 +76,23 @@ public class Rendering_Sprites implements Runnable{
 		
 		//WARNING renderSpriteRot and others rendering functions witch 'Rot' in name are not optimalized and might not work very well
 		//Do not use if not necessary
-		screen.renderSpriteRot(100, 100,
-				24, //sprite size on screen
-				((System.currentTimeMillis()%1000)/1000.0)*75,//rotation TIP: Full turn of 360 deg is 75 here ;-) TODO: Repair calculations for rotating images
+		double rot = Math.atan2(100- Mouse.Xpixel,100- Mouse.Ypixel);
+		
+		screen.renderSpriteRot(100,100,
+				128,128, //sprite size on screen
+				rot,//rotation TODO:Write better rotations :-(
 				my_sprite_medal);
+		
+		if(Keyboard.getKey(KeyEvent.VK_S)) {
+			File outputfile = new File("image.png");
+			try {
+				ImageIO.write(screen.getImage(), "png", outputfile);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+		}
 	}
 	
 	public static void main(String[] args) {

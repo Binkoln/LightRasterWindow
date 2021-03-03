@@ -29,9 +29,9 @@ public class Window extends Canvas implements Runnable{
 	private boolean RUNNING = false;
 	private JFrame frame;
 
+	public static boolean experimental_Static_Resolution = false;
 
-
-	public Screen screen;
+	public Screen screen = null;
 	public Graphics graphics;
 	private Keyboard keyboard = new Keyboard();
 	private Mouse mouse = new Mouse();
@@ -41,6 +41,9 @@ public class Window extends Canvas implements Runnable{
 	private Runnable u;
 	private Runnable g;
 	public boolean STABLE_UPS = true;
+	public boolean STABLE_FPS = false;
+	public boolean MANUAL_SCREEN_RENDERING = false;
+	public boolean MANUAL_WINDOW_CLEARING = false;
 
 	
 	public static String getTitle() {return TITLE;}
@@ -94,6 +97,7 @@ public class Window extends Canvas implements Runnable{
 		addKeyListener(keyboard);
 		addMouseListener(mouse);
 		addMouseMotionListener(mouse);
+		addMouseWheelListener(mouse);
 		
 		frame.add(this,new BorderLayout().CENTER);
 		
@@ -113,11 +117,16 @@ public class Window extends Canvas implements Runnable{
 			Toolkit tk = Toolkit.getDefaultToolkit();
 			frame.setLocation(0, 0);
 			frame.setSize(tk.getScreenSize());
+			if(experimental_Static_Resolution&& screen == null) {
+					screen = new Screen(WIDTH / pixel_size,HEIGHT / pixel_size);
+			}
+			
 			WIDTH = tk.getScreenSize().width;
 			HEIGHT = tk.getScreenSize().height;
 		}
 		frame.setVisible(true);
 		this.PIXEL_SIZE = pixel_size;
+		if(screen == null)
 		screen = new Screen(WIDTH / pixel_size,HEIGHT / pixel_size);
 		
 
@@ -158,17 +167,28 @@ public class Window extends Canvas implements Runnable{
 			timeNOW = System.nanoTime();
 			delta += (timeNOW - timeLAST) / frametime;
 			timeLAST = timeNOW;
+			
 			if(STABLE_UPS)
 			while(delta >= 1){
 				update();
 				delta -= 1;
 				UPS++;
+				
+				if(STABLE_FPS && delta < 2)
+				{
+					render();
+					FPS++;
+				}
 			}
-			else
+			else {
 				update();
-			render();
-			FPS++;
-			
+				UPS++;
+			}
+			if(!STABLE_FPS)
+			{
+				render();
+				FPS++;
+			}
 			if(System.currentTimeMillis() - timerek >= 1000){
 				timerek = System.currentTimeMillis();
 				//System.out.println("FPS: " + FPS +"--- UPS: " + UPS);
@@ -193,28 +213,62 @@ public class Window extends Canvas implements Runnable{
 		
 	}
 	
+	private BufferStrategy shared_bs = null;
+	private Graphics shared_g = null;
+	
+	public void start_manual_rendering() {
+		shared_bs = getBufferStrategy();
+		shared_g = shared_bs.getDrawGraphics();
+	}
+	
+	public void renderScreenOnWindow(final Screen screen,int pos_x_on_window,int pos_y_on_window,int width_on_window,int height_on_window)
+	{
+		
+		
+		shared_g.drawImage(screen.getImage(),pos_x_on_window,pos_y_on_window,width_on_window,height_on_window,null);
+		
+	}
+	
+	public void stop_manual_rendering() {
+		shared_g.dispose();
+		shared_bs.show();
+	}
+	
+	
+	
 	private void render(){
 		BufferStrategy bs = getBufferStrategy();
 		if(bs == null){
 			createBufferStrategy(3);
 			return;
 		}
-		
-		
-		
-		Graphics g = bs.getDrawGraphics();
-		g.setColor(Color.WHITE);
-		g.fillRect(0, 0, WIDTH + 10, HEIGHT + 10);
 		r.run();
+		Graphics g = bs.getDrawGraphics();
+		if(!MANUAL_WINDOW_CLEARING) 
+		{
+			g.setColor(Color.BLACK);
+			g.fillRect(0, 0, WIDTH + 10, HEIGHT + 10);
+		}
+		
+		
+		if(MANUAL_SCREEN_RENDERING)return;
+		
+		
+
+		
 		//screen.clear(0x000000);
 		//gsm.render(screen);
 		graphics = screen.getImage().getGraphics();
 		if(this.g != null)
-		this.g.run();
-		g.drawImage(screen.getImage(),0,0,WIDTH,HEIGHT,null);
+			this.g.run();
 		
-		g.dispose();
-		bs.show();
+	
+			g.drawImage(screen.getImage(),0,0,WIDTH,HEIGHT,null);
+		
+		
+			g.dispose();
+			bs.show();
+		
 	}
 	
 	
